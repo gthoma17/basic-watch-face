@@ -102,17 +102,56 @@ Settings are persisted using the Moddable Preference API and will be remembered 
 
 ## CI/CD Pipeline
 
-The project includes a GitHub Actions workflow that:
+The project includes a GitHub Actions workflow that automatically builds and publishes releases:
 
-1. **Tests**: Runs the Jest test suite on every push and pull request
-2. **Builds**: Compiles the Moddable application
-3. **Releases**: Automatically creates releases with build artifacts when tags are pushed
+### Pipeline Jobs
 
-To create a new release:
+1. **Test**: Runs the Jest test suite on every push and pull request
+2. **Build**: Creates a `.pbw` (Pebble Watch Bundle) artifact containing the packaged watch face
+3. **Release**: Automatically creates GitHub releases with the `.pbw` artifact attached when version tags are pushed
+
+### Creating a Release
+
+To create a new release and publish the watch face:
+
+1. Update the version in `package.json` if needed
+2. Commit your changes:
+   ```bash
+   git add .
+   git commit -m "Prepare release vX.Y.Z"
+   ```
+
+3. Create and push a version tag (format: `vX.Y.Z`):
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+4. The CI/CD pipeline will automatically:
+   - Run all tests
+   - Build the watch face and create the `.pbw` artifact
+   - Create a GitHub release with the tag
+   - Attach the `.pbw` file to the release
+   - Generate release notes from commits
+
+### Release Artifact
+
+Each release includes a `basic-watch-face-X.Y.Z.pbw` file that contains:
+- Application source code (`src/main.js`, `src/settings.js`)
+- Manifest configuration (`manifest.json`)
+- Package metadata with build information
+
+The `.pbw` file is a standard zip archive that can be extracted and inspected if needed.
+
+### Manual Build
+
+You can also build the `.pbw` artifact locally:
+
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+./scripts/build-pbw.sh 1.0.0
 ```
+
+This will create `build/basic-watch-face-1.0.0.pbw` in your local directory.
 
 ## License
 

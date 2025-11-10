@@ -33,7 +33,7 @@ jobs:
       run: npm test
       
   build:
-    name: Build Moddable App
+    name: Build Watch Face
     runs-on: ubuntu-latest
     needs: test
     
@@ -44,42 +44,27 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          VERSION="${GITHUB_REF#refs/tags/v}"
+        else
+          VERSION="dev-${GITHUB_SHA::7}"
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Building version: ${VERSION}"
         
-    - name: Install Moddable SDK dependencies
+    - name: Build .pbw artifact
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc git make libncurses-dev flex bison gperf
-        
-    - name: Download and setup Moddable SDK
-      run: |
-        cd ~
-        git clone --depth 1 https://github.com/Moddable-OpenSource/moddable.git
-        cd moddable
-        cd build/makefiles/lin
-        make
-      continue-on-error: true
-      
-    - name: Build Moddable app
-      run: |
-        export MODDABLE=~/moddable
-        export PATH=$MODDABLE/build/bin/lin/release:$PATH
-        mcconfig -d -m -p simulator
-      continue-on-error: true
-      
-    - name: Create build artifact
-      run: |
-        mkdir -p build
-        echo "Moddable build artifact for basic-watch-face v1.0.0" > build/basic-watch-face.mod
+        chmod +x scripts/build-pbw.sh
+        ./scripts/build-pbw.sh ${{ steps.get_version.outputs.version }}
         
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: moddable-app
-        path: build/*.mod
+        name: watch-face-pbw
+        path: build/*.pbw
         
   release:
     name: Create Release
@@ -97,13 +82,14 @@ jobs:
     - name: Download build artifact
       uses: actions/download-artifact@v4
       with:
-        name: moddable-app
+        name: watch-face-pbw
         path: build/
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: build/*.mod
+        files: build/*.pbw
         generate_release_notes: true
+        draft: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
