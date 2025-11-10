@@ -8,7 +8,8 @@
   "scripts": {
     "test": "jest",
     "build": "mcconfig -d -m -p simulator",
-    "build:device": "mcconfig -d -m"
+    "build:device": "mcconfig -d -m",
+    "build:pbw": "./scripts/build-pbw.sh"
   },
   "devDependencies": {
     "jest": "^29.7.0"
